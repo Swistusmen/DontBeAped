@@ -1,0 +1,13 @@
+-dodanie uruchamiania tcpdumpa w tle co 10 sekund i zamykanie go co 10 sekund (na osobnym watku) KUBA
+-co jakis czas musi lecie nslookup ->dodanie timera ktory nam sprawdzi co jakis czas adresy naszych stroni zupdatuje (musi isc co godzine) TODO: Kiedys-??
+-leci ciagly skrypt ktory analizuje logi tcpdumpa (najbardziej aktualny plik):
+    -> skrypt sprawdza z ktorej strony doszlo do przekierowania (ip, url)-> Ja
+    -> sprawdzenie  daty rejestracji strony -> Kuba/ Ja
+    -> sprawdzenie rejestru ceidg -> Trudne: Ja
+    -> sprawdzenie odchylenia standardowego (ceneo) -> Trudne: Strona gdzie byl koszyk, -> odczt wartosci cen
+    -> przeszukanie informacji kontaktowych -> Latwe / Kuba
+    -> sprawdzenie metod platnosci (jesli nie ma visy/mastercard itp to lipa) -> LAtwe /kuba
+
+    -> z tego wszystkiego liczy sie jakis score-> jesli niebezpieczny to info // To na samym koncu
+
+    Dlugofalowo dodajemy llame : Kuba
