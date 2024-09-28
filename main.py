@@ -3,6 +3,7 @@ import time
 import threading
 import os
 
+nazwapliku = ''
 
 def capture_tcp_packets():
     while True:
@@ -16,7 +17,7 @@ def capture_tcp_packets():
 
             # Uruchomienie tcpdump w osobnym procesie
             process = subprocess.Popen(tcpdump_command)
-
+            nazwapliku = "output_{i}.pcap"
             # Czekanie 3 sekundy
             time.sleep(3)
 
@@ -28,6 +29,10 @@ capture_packets = threading.Thread(target=capture_tcp_packets)
 
 capture_packets.start()
 
-time.sleep(20)
+for i in range(20):
+    time.sleep(3)
+    print(nazwapliku)
+
+
 
 capture_packets.join()
