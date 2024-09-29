@@ -22,7 +22,7 @@ def capture_tcp_packets():
             nazwapliku = f"output_{i}.pcap"
             
             # Czekanie 3 sekundy
-            time.sleep(3)
+            time.sleep(6)
 
             # Zatrzymanie tcpdump
             process.terminate()
@@ -34,6 +34,8 @@ capture_packets = threading.Thread(target=capture_tcp_packets)
 
 def start_capturing_tcp_packets():
     capture_packets.start()
+
+start_capturing_tcp_packets()
 
 # Zakończenie wątku
 capture_packets.join()
