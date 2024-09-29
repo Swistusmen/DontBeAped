@@ -1,0 +1,7 @@
+1. testowe strony ktore przekierowywuja (lista)
+2. program main:
+    -> pozyskanie adresow
+    -> odpalenie tcdumpa w osobnym watku
+    -> przeszukiwanie tcdumpa pod katem konkretnego adresu
+    jesli bedzie:
+        -> alert ma byc to wypisane
