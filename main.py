@@ -1,7 +1,10 @@
 import subprocess
 from scapy.all import rdpcap, TCP, IP
+import time
+import threading
+import os
+import socket
 
-# Lista adresów URL do sprawdzenia
 urls = [
     "www.interia.pl",
     "www.wp.pl"
@@ -9,44 +12,108 @@ urls = [
 
 results = {}
 
+nazwapliku = ''
+
+def capture_tcp_packets():
+    while True:
+        for i in range(10):
+            os.makedirs("Packets", exist_ok=True)
+            output_file = f"Packets/output_{i}.pcap"
+
+            with open(os.devnull, 'w') as devnull:
+                tcpdump_command = ["sudo", "tcpdump", "-i", "en0", "-w", output_file]
+                process = subprocess.Popen(tcpdump_command)
+
+            global nazwapliku
+            nazwapliku = f"output_{i}.pcap"
+
+            time.sleep(6)
+
+            process.terminate()
+            process.wait() 
+
 def nslookup(url):
     try:
-        # Uruchomienie polecenia nslookup
         output = subprocess.check_output(["nslookup", url], universal_newlines=True)
         return output
     except subprocess.CalledProcessError as e:
         return str(e)
+    
+def get_hostname(ip_address):
+    try:
+        hostname, _, _ = socket.gethostbyaddr(ip_address)
+        return hostname
+    except socket.herror:
+        return None
 
-# Przetwarzanie każdego adresu URL
+def extract_ips_from_pcap(file_path):
+    packets = rdpcap(file_path)
+    ip_addresses = set()
+
+    for packet in packets:
+        if packet.haslayer('IP'):
+            ip_addresses.add(packet['IP'].src)
+            ip_addresses.add(packet['IP'].dst)
+
+    return ip_addresses
+
+def look_for_suspicious_ips_in_file(filename):
+    file_path = filename
+    ip_addresses = extract_ips_from_pcap(file_path)
+
+    for ip in ip_addresses:
+        hostname = get_hostname(ip)
+        if hostname:
+            print(f"Adres IP: {ip} odpowiada stronie: {hostname}")
+            # Sprawdzamy, czy adres IP jest w wynikach nslookup dla danej domeny
+            for domain, domain_ips in results.items():
+                if ip in domain_ips:
+                    print(f"Adres IP: {ip} należy do domeny {domain}")
+                    return ip
+    return None
+
+def find_redirection_ip(ip,filename):
+    packets = rdpcap(filename)
+
+    redirect_sources = set()
+
+    for packet in packets:
+        if IP in packet:
+            ip_src = packet[IP].src
+            ip_dst = packet[IP].dst
+            if ip_dst == ip:
+                redirect_sources.add(ip_src)
+                return ip_src
+
+def deamon_in_the_background():
+    time.sleep(6)
+    while True:
+        for i in range(10):
+            output_file = f"Packets/output_{i}.pcap"
+            ip=look_for_suspicious_ips_in_file(output_file)
+            if ip!=None:
+                redirection_ip=find_redirection_ip(ip,output_file) #moze byc ryzyko ze trzeba bedzie isc wiecej niz 1 plik do tylu
+                print("zostales przekierowany z "+ redirection_ip)
+                #TODO tutaj leci robota
+            time.sleep(6)
+
+#getting list of ips which we are interested in
 for url in urls:
-    print(f"Sprawdzam: {url}")
     output = nslookup(url)
-    # Wydobycie adresów IP z wyników
     ip_addresses = []
     for line in output.splitlines():
         if "Address:" in line and not line.startswith("***"):
-            # Bezpieczne wydobycie adresu IP
             parts = line.split(":")
             if len(parts) > 1:
                 ip_address = parts[1].strip()
                 ip_addresses.append(ip_address)
-
-    # Dodanie wyników do słownika
     results[url] = ip_addresses
-    # Wypisanie wyników
-    print(f"Wyniki dla {url}: {ip_addresses}\n")
 
-# Wypisanie końcowych wyników w strukturze
-print("Ostateczne wyniki:")
-for url, ips in results.items():
-    print(f"{url}: {ips}")
+#starting capturing packets with tcpdump
+capture_packets = threading.Thread(target=capture_tcp_packets)
+capture_packets.start()
 
-def read_once_from_file():
-    packets = rdpcap('output.pcap')
+deamon_in_the_background()
 
-    # Adres IP strony do monitorowania
-    monitored_ip = "217.74.72.58"  # Zmień na odpowiedni adres IP
-
-    for packet in packets:
-        if IP in packet and packet[IP].dst == monitored_ip:
-            print(f"Pakiet z {packet[IP].src} do {packet[IP].dst}, port {packet[TCP].dport}")
+#end of the program
+capture_packets.join()
